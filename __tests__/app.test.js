@@ -4,7 +4,7 @@ const seed = require("../db/seeds/seed");
 const testData = require("../db/data/test-data/index");
 const db = require("../db/connection");
 const fs = require('fs/promises');
-const { string } = require("pg-format");
+
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
 describe("Tests for /api/topics", () => {
@@ -203,6 +203,20 @@ describe('/api/comments/:comment_id', () => {
     })
         
     });
+    
+});
+
+describe('/api/users', () => {
+    test('gets 200', async () => {
+    const { body } = await request(app).get('/api/users').expect(200);
+        body.users.forEach((user)=>{
+            expect(user).toMatchObject({
+                username: expect.any(String),
+                name: expect.any(String),
+                avatar_url : expect.any(String)
+            })})
+
+    })
     
 });
 
