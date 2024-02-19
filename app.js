@@ -13,7 +13,7 @@ app.use((err,req,res,next)=>{
     next(err)
 })
 app.use((err,req,res,nex)=>{
-    console.log(err)
+    //console.log(err)
     if(err.status && err.msg){
       
         res.status(err.status).send(err)
