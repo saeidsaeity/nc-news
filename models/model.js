@@ -1,4 +1,5 @@
 const db = require('../db/connection');
+const fs = require('fs/promises');
 
     async function selectTopics(){
        
@@ -8,8 +9,16 @@ const db = require('../db/connection');
 
 
     }
+    async function selectApi(){
+        const apidata = await fs.readFile(`${__dirname}/../endpoints.json`)
+        
+        return JSON.parse(apidata)
+        
+
+    }
 
 
 module.exports = {
-    selectTopics
+    selectTopics,
+    selectApi
 };
