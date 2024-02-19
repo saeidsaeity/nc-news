@@ -4,6 +4,7 @@ const seed = require("../db/seeds/seed");
 const testData = require("../db/data/test-data/index");
 const db = require("../db/connection");
 const fs = require('fs/promises');
+const { string } = require("pg-format");
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
 describe("Tests for /api/topics", () => {
@@ -49,6 +50,49 @@ describe("tests for /api/articles/:article_id endpoint ", () => {
   
   expect(body.msg).toEqual('Bad Request')
   })
+
+
+  describe('Patch tests for /api/articles/:article_id endpoint', () => {
+    test('Patch 200', async () => {
+    const data = { inc_votes : 10000 }
+    const { body } = await request(app).patch('/api/articles/4').send(data).expect(200);
+    console.log(body)
+        expect(body.article).toMatchObject({
+            article_id: 4,
+            title: 'Student SUES Mitch!',
+            topic: 'mitch',
+            author: 'rogersop',
+            body: 'We all love Mitch and his wonderful, unique typing style. However, the volume of his typing has ALLEGEDLY burst another students eardrums, and they are now suing for damages',
+            created_at: expect.any(String),
+            votes: 10000,
+            article_img_url: 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700'
+          })
+    })
+    test('Patch 200', async () => {
+        const data = { inc_votes : -10}
+        const { body } = await request(app).patch('/api/articles/4').send(data).expect(400);
+        expect(body.msg).toBe("Bad Request votes cant go below zero");
+    })
+    test('Patch 200', async () => {
+    const data =  { inc_votes : 10}
+    const { body } = await request(app).patch('/api/articles/100').send(data).expect(404);
+    expect(body.msg).toBe("article doesnt exist");
+    })
+    test('Patch 200', async () => {
+    const data = { inc_votes : 'dwwad'}
+    const { body } = await request(app).patch('/api/articles/4').send(data).expect(400);
+    expect(body.msg).toBe('Bad Request incorrect format');
+    })
+    test('Patch 200', async () => {
+        const data = { inc_votes : 10 }
+    const { body } = await request(app).patch('/api/articles/wadiodwajio').send(data).expect(400);
+    expect(body.msg).toBe('Bad Request');
+    })
+
+
+
+  });
+
 });
 
 describe('tests for /api/articles endpoint ', () => {
@@ -142,5 +186,16 @@ describe('/api/articles/:article_id/comments endpoint', () => {
     });
     
    
+});
+describe('/api/comments/:comment_id', () => {
+
+    describe('DELETE 204 /api/comments/:comment_id ', () => {
+        test('Delete 204', async () => {
+       
+         await request(app).delete('/api/comments/2').expect(204);
+        })
+        
+    });
+    
 });
 
