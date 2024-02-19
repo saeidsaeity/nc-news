@@ -1,3 +1,4 @@
 # Northcoders News API
 
-For instructions, please head over to [L2C NC News](https://l2c.northcoders.com/courses/be/nc-news).
+to configure you database we use Dotenv therefore you need to create a .env.development and .env.test fileand you will need to specify your database name with
+PG_DATABASE = 'insert name here'
