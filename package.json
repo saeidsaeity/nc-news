@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "bc-nc-news",
   "main": "index.js",
+  
   "scripts": {
     "setup-dbs": "psql -f ./db/setup.sql",
     "seed": "node ./db/seeds/run-seed.js",
@@ -24,6 +25,7 @@
     "husky": "^8.0.2",
     "jest": "^27.5.1",
     "jest-extended": "^2.0.0",
+    "jest-sorted": "^1.0.14",
     "pg-format": "^1.0.4"
   },
   "dependencies": {
@@ -35,7 +37,9 @@
   },
   "jest": {
     "setupFilesAfterEnv": [
-      "jest-extended/all"
+      "jest-extended/all",
+      "jest-sorted"
+
     ]
   }
 }

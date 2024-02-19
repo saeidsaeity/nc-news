@@ -50,3 +50,26 @@ describe("tests for /api/articles/:article_id endpoint ", () => {
   expect(body.msg).toEqual('Bad Request')
   })
 });
+
+describe('tests for /api/articles endpoint ', () => {
+    test('gets 200', async () => {
+    const { body } = await request(app).get('/api/articles').expect(200);
+    expect(body.articles).not.toEqual(0);
+    body.articles.forEach((article)=>{
+        expect(article).toMatchObject({
+            author : expect.any(String),
+            title : expect.any(String),
+            article_id : expect.any(Number),
+            topic : expect.any(String),
+            created_at : expect.any(String),
+            votes: expect.any(Number),
+            article_img_url: expect.any(String),
+            comment_count: expect.any(String)
+
+        })
+    })
+    expect(body.articles).toBeSortedBy('created_at',{descending : true})
+    console.log(body)
+    })
+    
+});
