@@ -63,7 +63,7 @@ async function insertComment(commentinfo,articleId){
             return Promise.reject({status:400, msg: "Bad Request: Incorrect format for comment"})
         }
         if(typeof commentinfo.username !== 'string' || typeof commentinfo.body !== 'string'){
-            console.log(commentinfo)
+           
             return Promise.reject({status:400, msg: "Bad Request: Incorrect format for comment"})
         }
         if((await db.query('SELECT username FROM users WHERE username = $1',[commentinfo.username])).rows.length === 0){

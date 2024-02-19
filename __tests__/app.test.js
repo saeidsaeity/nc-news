@@ -131,7 +131,7 @@ describe('/api/articles/:article_id/comments endpoint', () => {
     test('POST 400 incorrect data format', async () => {
         const data = {username: 100000,body:23}
         const { body } = await request(app).post('/api/articles/2/comments').send(data).expect(400);
-        console.log(body.msg)
+        
         })
 
 
