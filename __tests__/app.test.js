@@ -115,6 +115,36 @@ describe('tests for /api/articles endpoint ', () => {
     expect(body.articles).toBeSortedBy('created_at',{descending : true})
   
     })
+    test('gets specific topic returns 200', async () => {
+    const { body } = await request(app).get('/api/articles?topic=cats').expect(200);
+
+    expect(body.articles[0]).toMatchObject({
+        article_id: 5,
+        title: 'UNCOVERED: catspiracy to bring down democracy',
+        topic: 'cats',
+        author: 'rogersop',
+        body: 'Bastet walks amongst us, and the cats are taking arms!',
+        created_at: expect.any(String),
+        votes: 0,
+        article_img_url: 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700'
+      })
+    })
+    test('gets 404 when given a topic that doesnt exist', async () => {
+    const { body } = await request(app).get('/api/articles?topic=iioipkl').expect(404);
+    expect(body.msg).toEqual("Query not found");
+    })
+    test('gets 400 for bad query', async () => {
+    const { body } = await request(app).get('/api/articles?waduhwa=brudawe3').expect(400)
+    expect(body.msg).toEqual("Bad Query");
+    ;
+    })
+
+
+//here
+
+
+
+
     
 });
 describe('/api/articles/:article_id/comments endpoint', () => {
