@@ -69,7 +69,34 @@ describe('tests for /api/articles endpoint ', () => {
         })
     })
     expect(body.articles).toBeSortedBy('created_at',{descending : true})
-    console.log(body)
+  
     })
     
+});
+describe('/api/articles/:article_id/comments endpoint', () => {
+    
+    test('gets 200', async () => {
+    const { body } = await request(app).get('/api/articles/3/comments').expect(200);
+    expect(body.comments.length).not.toEqual(0);
+    body.comments.forEach((comment)=> {
+        expect(comment).toMatchObject({
+        comment_id:expect.any(Number),
+        votes:expect.any(Number),
+        created_at:expect.any(String),
+        author:expect.any(String),
+        body:expect.any(String),
+        article_id:expect.any(Number)
+
+        })
+    })
+
+    })
+    test('gets 404 when an article id doesnt exist or article doesnt have comments', async () => {
+    const { body } = await request(app).get('/api/articles/1000/comments').expect(404);
+    expect(body.msg).toEqual('Comments with this Article Id dont exist')
+    })
+    test('gets 400 when a bad request is made', async () => {
+    const { body } = await request(app).get('/api/articles/banana/comments').expect(400);
+    expect(body.msg).toEqual('Bad Request');
+    })
 });
