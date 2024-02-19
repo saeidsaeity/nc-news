@@ -1,4 +1,4 @@
-const {selectTopics} = require('../models/model');
+const {selectTopics,selectApi} = require('../models/model');
 
    
     async function getTopics(req,res,next) {
@@ -12,6 +12,18 @@ const {selectTopics} = require('../models/model');
         
         
     }
+    async function getApi(req,res,next) {
+        try{
+        const apiData = await selectApi()
+        res.status(200).send(apiData)
+
+        }
+        catch(error){
+            console.log(error)
+
+        }
+        
+    }
 
 
-module.exports = {getTopics}
+module.exports = {getTopics,getApi}
