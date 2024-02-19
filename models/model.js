@@ -107,8 +107,7 @@ async function insertComment(commentinfo, articleId) {
 async function updateArticle(adjustVotes, article_id) {
  
     
-    console.log(article_id)
-    console.log(typeof adjustVotes !== 'number')
+    
     if ((await db.query("SELECT * FROM articles WHERE article_id = $1", [article_id,])).rows.length === 0) {
       return Promise.reject({ status: 404, msg: "article doesnt exist" });
     }
@@ -128,8 +127,12 @@ async function updateArticle(adjustVotes, article_id) {
     return output.rows[0];
   
 }
-async function removeComment(articleId){
-    await db.query('DELETE FROM articles WHERE article_id = $1',[articleId])
+async function removeComment(commentId){
+
+    console.log(commentId)
+    const {rows}= await db.query('DELETE FROM comments WHERE comment_id = $1 RETURNING *',[commentId])
+    console.log(rows)
+   return rows.length === 0 ?  Promise.reject({status:404, msg: 'Comment doesnt exist'}) : rows 
 
 }
 module.exports = {

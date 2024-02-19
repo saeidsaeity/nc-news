@@ -87,8 +87,9 @@ const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByAr
     }
     async function deleteComment(req,res,next){
         try {
-            const articleId = req.params.article_id
-            await removeComment()
+            
+            const commentId = req.params.comment_id
+            await removeComment(commentId)
             res.status(204).send()
 
         } catch (error) {

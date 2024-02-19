@@ -56,7 +56,7 @@ describe("tests for /api/articles/:article_id endpoint ", () => {
     test('Patch 200', async () => {
     const data = { inc_votes : 10000 }
     const { body } = await request(app).patch('/api/articles/4').send(data).expect(200);
-    console.log(body)
+
         expect(body.article).toMatchObject({
             article_id: 4,
             title: 'Student SUES Mitch!',
@@ -194,6 +194,13 @@ describe('/api/comments/:comment_id', () => {
        
          await request(app).delete('/api/comments/2').expect(204);
         })
+    test('Delete 404 when given a comment id that doesnt exist', async () => {
+     await request(app).delete('/api/comments/10000').expect(404);
+     
+    })
+    test('Delete 400 invalid request', async () => {
+     await request(app).delete('/api/comments/banana').expect(400);
+    })
         
     });
     
