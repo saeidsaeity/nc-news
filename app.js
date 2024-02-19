@@ -1,5 +1,5 @@
 const express = require('express');
-const {getTopics,getApi,getArticleById} = require('./controllers/controller')
+const {getTopics,getApi,getArticleById,getArticles} = require('./controllers/controller')
 const app = express()
 
 app.get('/api',getApi)
@@ -12,6 +12,8 @@ app.use((err,req,res,next)=>{
     }
     next(err)
 })
+app.get('/api/articles',getArticles)
+
 app.use((err,req,res,nex)=>{
     //console.log(err)
     if(err.status && err.msg){
