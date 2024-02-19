@@ -1,4 +1,4 @@
-const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByArticle} = require('../models/model');
+const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByArticle,insertComment} = require('../models/model');
 
    
     async function getTopics(req,res,next) {
@@ -61,5 +61,16 @@ const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByAr
 
         }
     }
-
-module.exports = {getTopics,getApi,getArticleById,getArticles,getCommentsByArticle}
+    async function postComment(req,res,next){
+        try {
+            const articleId = req.params.article_id
+            const commentinfo =req.body
+           
+            const comment =await insertComment(commentinfo,articleId)
+            res.status(201).send({comment})
+        } catch (error) {
+            next(error)
+            
+        }
+    }
+module.exports = {getTopics,getApi,getArticleById,getArticles,getCommentsByArticle,postComment}
