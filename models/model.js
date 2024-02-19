@@ -28,7 +28,7 @@ const fs = require('fs/promises');
 
    }
 async function selectAllArticles(){
-    try{
+   
     const {rows} = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
     FROM articles
     JOIN comments 
@@ -38,13 +38,30 @@ async function selectAllArticles(){
      `)
      return rows
     }
-    catch(error){
-        console.log(error)
-    }
+   
+
+async function selectCommentsByArticle(article_id){
+
+    
+    const {rows} = await db.query(`SELECT comments.comment_id,comments.votes,comments.created_at,comments.author,comments.body,comments.article_id 
+    FROM articles
+    JOIN comments
+    ON articles.article_id = comments.article_id
+    WHERE articles.article_id = $1`,[article_id])
+  
+    return rows.length >0 ? rows : Promise.reject({status:404, msg: "Comments with this Article Id dont exist"})
+    
+        
+        
+    
+    
+    
+
 }
 module.exports = {
     selectTopics,
     selectApi,
     selectArticle,
-    selectAllArticles
+    selectAllArticles,
+    selectCommentsByArticle
 };

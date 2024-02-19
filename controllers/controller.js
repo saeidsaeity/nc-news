@@ -1,4 +1,4 @@
-const {selectTopics,selectApi,selectArticle,selectAllArticles} = require('../models/model');
+const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByArticle} = require('../models/model');
 
    
     async function getTopics(req,res,next) {
@@ -48,6 +48,18 @@ const {selectTopics,selectApi,selectArticle,selectAllArticles} = require('../mod
             next(error)
         }
     }
+    async function getCommentsByArticle(req,res,next){
+        try{
+            const articleId = req.params.article_id
+            const comments = await selectCommentsByArticle(articleId)
+            res.status(200).send({comments})
 
+        }
+        catch(error){
+            //console.log(error);
+            next(error)
 
-module.exports = {getTopics,getApi,getArticleById,getArticles}
+        }
+    }
+
+module.exports = {getTopics,getApi,getArticleById,getArticles,getCommentsByArticle}
