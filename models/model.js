@@ -129,12 +129,24 @@ async function updateArticle(adjustVotes, article_id) {
 }
 async function removeComment(commentId){
 
-    console.log(commentId)
+
     const {rows}= await db.query('DELETE FROM comments WHERE comment_id = $1 RETURNING *',[commentId])
     console.log(rows)
    return rows.length === 0 ?  Promise.reject({status:404, msg: 'Comment doesnt exist'}) : rows 
 
 }
+async function selectUsers(){
+    
+    try{
+    const {rows} = await db.query('SELECT username,name, avatar_url FROM users')
+   
+    return rows
+    }
+    catch(error){
+        console.log(error);
+    }
+}
+    
 module.exports = {
   selectTopics,
   selectApi,
@@ -143,5 +155,6 @@ module.exports = {
   selectCommentsByArticle,
   insertComment,
   updateArticle,
-  removeComment
+  removeComment,
+  selectUsers
 };
