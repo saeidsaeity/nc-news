@@ -1,11 +1,6 @@
 const db = require('../db/connection');
 const fs = require('fs/promises');
-    async function checkIfIdExists(table,id,key){
-        const {rows}= await db.query(`SELECT * FROM ${table} WHERE ${key} =  ${id} `)
-        return rows.length > 0
-
-
-    }
+   
     async function selectTopics(){
        
         const {rows} = await db.query('SELECT * FROM topics ')
@@ -22,8 +17,9 @@ const fs = require('fs/promises');
 
     }
    async function selectArticle(articleId){
-    if(await checkIfIdExists('articles',articleId,'article_id')){
+  
     const {rows} = await db.query('SELECT * FROM articles WHERE article_id = $1',[articleId])
+    if(rows.length > 0){
     return rows[0]
     }
     else{
