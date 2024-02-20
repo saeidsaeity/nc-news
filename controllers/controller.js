@@ -40,7 +40,8 @@ const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByAr
     }
     async function getArticles(req,res,next){
         try{
-            const articles = await selectAllArticles()
+            const query = req.query
+            const articles = await selectAllArticles(query)
             res.status(200).send({articles})
 
         }
@@ -56,7 +57,7 @@ const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByAr
 
         }
         catch(error){
-            //console.log(error);
+    
             next(error)
 
         }

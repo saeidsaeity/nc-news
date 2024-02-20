@@ -2,7 +2,6 @@ const { log } = require("console");
 const db = require("../db/connection");
 const fs = require("fs/promises");
 
-
 async function selectTopics() {
   const { rows } = await db.query("SELECT * FROM topics ");
 
@@ -29,9 +28,19 @@ async function selectArticle(articleId) {
   
   
 }
-async function selectAllArticles() {
-  const { rows } =
-    await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
+async function selectAllArticles(query) {
+    
+   
+    const topics =await db.query(`SELECT slug FROM topics`)
+
+    if(topics.rows.some((topic)=> topic.slug === query.topic)){
+    const articledata = await db.query(`SELECT * from articles WHERE topic = $1`,[query.topic])
+    return articledata.rows
+
+    }
+    else if(query.topic === undefined && Object.keys(query).length === 0){
+    //console.log(topics.rows.includes('cats'))
+    const { rows } = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
     FROM articles
     JOIN comments 
     ON articles.article_id = comments.article_id
@@ -39,7 +48,16 @@ async function selectAllArticles() {
     ORDER BY articles.created_at DESC
      `);
   return rows;
+    }
+    else if('topic' in query){
+        return Promise.reject({status:404, msg:'Query not found'})
+    }
+    else{
+        return Promise.reject({status:400,msg:'Bad Query'})
+    }
 }
+
+
 
 async function selectCommentsByArticle(article_id) {
   const validArticleIds = await db.query(`SELECT article_id From articles`)
@@ -138,7 +156,6 @@ async function removeComment(commentId){
 
 
     const {rows}= await db.query('DELETE FROM comments WHERE comment_id = $1 RETURNING *',[commentId])
-   
    return rows.length === 0 ?  Promise.reject({status:404, msg: 'Comment doesnt exist'}) : rows 
 
 }
@@ -150,7 +167,7 @@ async function selectUsers(){
     return rows
     }
     catch(error){
-        console.log(error);
+     
     }
 }
     
