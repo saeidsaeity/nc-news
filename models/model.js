@@ -29,32 +29,71 @@ async function selectArticle(articleId) {
   
 }
 async function selectAllArticles(query) {
-    
-   
-    const topics =await db.query(`SELECT slug FROM topics`)
+    const currentQuery = Object.keys(query)[0]
+    const validqueries = ['topic','sort_by','order',undefined]
+    console.log(currentQuery)
+    if(validqueries.includes(currentQuery)){
+    switch(currentQuery){
+      case 'topic':
+        const topics =await db.query(`SELECT topic FROM articles`)
+        if(topics.rows.some((topic)=> topic.topic === query.topic)){
+          const articledata = await db.query(`SELECT * from articles WHERE topic = $1`,[query.topic])
+          return articledata.rows
+      
+          }
+          return Promise.reject({status:404, msg:'Query not found'})
 
-    if(topics.rows.some((topic)=> topic.slug === query.topic)){
-    const articledata = await db.query(`SELECT * from articles WHERE topic = $1`,[query.topic])
-    return articledata.rows
+      case 'sort_by':
+        
+        console.log('here')
+        const columns = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
+        FROM articles
+        JOIN comments 
+        ON articles.article_id = comments.article_id
+        GROUP BY articles.article_id`)
+          if(columns.rows.some((row)=> row[query.sort_by] !== undefined)){
+           const {rows} =  await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
+           FROM articles
+           JOIN comments 
+           ON articles.article_id = comments.article_id
+           GROUP BY articles.article_id
+           ORDER BY ${query.sort_by} DESC`)
+           return rows
+          }
+          else if (query.sort_by === ''){
+            const {rows} =  await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
+           FROM articles
+           JOIN comments 
+           ON articles.article_id = comments.article_id
+           GROUP BY articles.article_id
+           ORDER BY created_at DESC`)
+           return rows
 
-    }
-    else if(query.topic === undefined && Object.keys(query).length === 0){
-    //console.log(topics.rows.includes('cats'))
-    const { rows } = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
-    FROM articles
-    JOIN comments 
-    ON articles.article_id = comments.article_id
-    GROUP BY articles.article_id
-    ORDER BY articles.created_at DESC
-     `);
+          }
+          return Promise.reject({status:404, msg:'Query not found'})
+        
+        
+
+
+      case 'order':
+
+      case undefined:
+        const { rows } = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
+          FROM articles
+          JOIN comments 
+          ON articles.article_id = comments.article_id
+          GROUP BY articles.article_id
+          ORDER BY articles.created_at DESC
+          `);
   return rows;
-    }
-    else if('topic' in query){
+      default:
         return Promise.reject({status:404, msg:'Query not found'})
     }
-    else{
-        return Promise.reject({status:400,msg:'Bad Query'})
-    }
+  }
+  else{
+    return Promise.reject({status:400,msg:'Bad Query'})
+  }
+
 }
 
 

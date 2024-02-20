@@ -139,7 +139,19 @@ describe('tests for /api/articles endpoint ', () => {
     expect(body.msg).toEqual("Bad Query");
     ;
     })
-
+describe('tests for /api/articles Queries advance', () => {
+  test('gets 200 for sort_by', async () => {
+  const { body } = await request(app).get('/api/articles?sort_by').expect(200);
+  
+  expect(body.articles).toBeSortedBy('created_at',{descending : true})
+  })
+  test('gets 200 for sort_by = ', async () => {
+    const { body } = await request(app).get('/api/articles?sort_by=comment_count').expect(200);
+  
+    expect(body.articles).toBeSortedBy('comment_count',{descending : true,coerce:true})
+    })
+  
+});
 
 //here
 
