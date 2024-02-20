@@ -139,7 +139,31 @@ describe('tests for /api/articles endpoint ', () => {
     expect(body.msg).toEqual("Bad Query");
     ;
     })
-
+describe('tests for /api/articles Queries advance', () => {
+  test('gets 200 for sort_by', async () => {
+  const { body } = await request(app).get('/api/articles?sort_by').expect(200);
+  
+  expect(body.articles).toBeSortedBy('created_at',{descending : true})
+  })
+  test('gets 200 for sort_by = commnet_count', async () => {
+    const { body } = await request(app).get('/api/articles?sort_by=comment_count').expect(200);
+  
+    expect(body.articles).toBeSortedBy('comment_count',{descending : true,coerce:true})
+    
+    })
+  test('gets 200 for sort_by=comment_countorder =asc ', async () => {
+  const { body } = await request(app).get('/api/articles?sort_by=comment_count&order=asc').expect(200);
+  expect(body.articles).toBeSortedBy('comment_count',{descending : false,coerce:true})
+  })
+  test('gets 400 for sort_by=comment_countorder=aawdwad', async () => {
+  const { body } = await request(app).get('/api/articles?sort_by=comment_count&order=wadawd').expect(400);
+  expect(body.msg).toEqual("Bad Request");
+  })
+  test('gets 400 bad query', async () => {
+  const { body } = await request(app).get('/api/articles?sort_by=commnt&order=asc').expect(404);
+  expect(body.msg).toEqual("Query not found");
+  })
+});
 
 //here
     describe('ADVANCED QUERIES', () => {
