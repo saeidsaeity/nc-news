@@ -142,7 +142,12 @@ describe('tests for /api/articles endpoint ', () => {
 
 
 //here
-
+    describe('ADVANCED QUERIES', () => {
+      test('gets 200 when sent sortby quert', async () => {
+      const { body } = await request(app).get('/api/articles?sort_by').expect(200);
+      })
+      
+    });
 
 
 
