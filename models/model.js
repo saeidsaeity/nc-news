@@ -153,14 +153,11 @@ async function removeComment(commentId){
 }
 async function selectUsers(){
     
-    try{
+    
     const {rows} = await db.query('SELECT username,name, avatar_url FROM users')
    
     return rows
-    }
-    catch(error){
-     
-    }
+
 }
     
 module.exports = {

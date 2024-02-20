@@ -262,6 +262,8 @@ describe('/api/comments/:comment_id', () => {
 describe('/api/users', () => {
     test('gets 200', async () => {
     const { body } = await request(app).get('/api/users').expect(200);
+        expect(body.users.length).not.toEqual(0);
+        
         body.users.forEach((user)=>{
             expect(user).toMatchObject({
                 username: expect.any(String),
