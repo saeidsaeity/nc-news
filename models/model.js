@@ -79,7 +79,7 @@ async function selectCommentsByArticle(article_id) {
   return rows
 }
 async function insertComment(commentinfo, articleId) {
-  try {
+
     if (
       (
         await db.query("SELECT * FROM articles WHERE article_id = $1", [
@@ -89,20 +89,12 @@ async function insertComment(commentinfo, articleId) {
     ) {
       return Promise.reject({ status: 404, msg: "Article not found" });
     }
-    if (JSON.stringify(Object.keys(commentinfo)) !== '["username","body"]') {
-      return Promise.reject({
-        status: 400,
-        msg: "Bad Request: Incorrect format for comment",
-      });
+    
+    if(!commentinfo.username || !commentinfo.body){
+      return Promise.reject({status: 400,msg: 'Bad Request'})
     }
-    if (
-      typeof commentinfo.username !== "string" ||
-      typeof commentinfo.body !== "string"
-    ) {
-      return Promise.reject({
-        status: 400,
-        msg: "Bad Request: Incorrect format for comment",
-      });
+    if(typeof commentinfo.username !== 'string'|| typeof commentinfo.body !== 'string'){
+      return Promise.reject({status :400,msg: 'Bad Request'})
     }
     if (
       (
@@ -119,14 +111,14 @@ async function insertComment(commentinfo, articleId) {
 
     const { rows } = await db.query(
       `INSERT INTO comments 
-    (author,body,article_id,created_at,votes)
+    (author,body,article_id,votes)
     VALUES
-    ($1,$2,$3,CURRENT_TIMESTAMP,$4)
+    ($1,$2,$3,$4)
     RETURNING *`,
       [commentinfo.username, commentinfo.body, articleId, 0]
     );
     return rows[0];
-  } catch (error) {}
+
 }
 
 async function updateArticle(adjustVotes, article_id) {

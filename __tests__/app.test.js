@@ -174,6 +174,10 @@ describe('/api/articles/:article_id/comments endpoint', () => {
     const { body } = await request(app).get('/api/articles/banana/comments').expect(400);
     expect(body.msg).toEqual('Bad Request');
     })
+
+
+
+
     describe('POST /api/articles/:article_id/comments endpoint', () => {
     test('POST 201', async () => {
     const data = {username: 'icellusedkars',body:"great article very informative"}
@@ -193,10 +197,28 @@ describe('/api/articles/:article_id/comments endpoint', () => {
         const { body } = await request(app).post('/api/articles/2/comments').send(data).expect(404);
         expect(body.msg).toEqual('username doesnt exist create a profile first before commenting');
         })
-    test('POST 400 incorrect data format', async () => {
+    test('POST 400 for invalid format', async () => {
             const data = {user:6643 , likes: 'football'}
             const { body } = await request(app).post('/api/articles/2/comments').send(data).expect(400);
             })
+    test('POST 201 even when given uncessary properties', async () => {
+    const data = {username: 'icellusedkars',body:"great article very informative",likes:'football'}
+    const { body } = await request(app).post('/api/articles/2/comments').send(data).expect(201);
+    expect(body.comment).toMatchObject({
+      comment_id: 19,
+      body: 'great article very informative',
+      article_id: 2,
+      author: 'icellusedkars',
+      votes: 0,
+      created_at: expect.any(String)
+    })
+
+    })
+    test('POST 400 invalid id ', async () => {
+    const data = {}
+    const { body } = await request(app).post('/api/articles/notanid/comments').send(data).expect(400);
+    expect(body.msg).toEqual('Bad Request');
+    })
 
     test('POST 404 article not found', async () => {
     const data = {username: 'icellusedkars',body:"great article very informative"}
