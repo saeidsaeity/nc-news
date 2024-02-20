@@ -89,12 +89,6 @@ async function selectAllArticles(query) {
           console.log(error)
         }
         
-        
-
-
-     
-          
-
       case undefined:
         const { rows } = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
           FROM articles
@@ -105,14 +99,25 @@ async function selectAllArticles(query) {
           `);
   return rows;
       default:
-        return Promise.reject({status:404, msg:'Query not found'})
-    }
   }
   else{
     return Promise.reject({status:400,msg:'Bad Query'})
   }
 
+
+    else{
+        return Promise.reject({status:400,msg:'Bad Query'})
+    }
+  
 }
+
+
+
+    
+    
+    
+    
+
 
 
 
