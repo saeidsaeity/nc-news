@@ -32,8 +32,10 @@ async function selectAllArticles(query) {
     const currentQuery = Object.keys(query)[0]
     const validqueries = ['topic','sort_by','order',undefined]
     console.log(currentQuery)
+    console.log(Object.keys(query))
     if(validqueries.includes(currentQuery)){
     switch(currentQuery){
+
       case 'topic':
         const topics =await db.query(`SELECT topic FROM articles`)
         if(topics.rows.some((topic)=> topic.topic === query.topic)){
@@ -44,20 +46,31 @@ async function selectAllArticles(query) {
           return Promise.reject({status:404, msg:'Query not found'})
 
       case 'sort_by':
+        try{
         
-        console.log('here')
+      
+        if(query.order === undefined){
+          query.order = 'desc'
+        }
+        
+        if(!['asc','desc'].includes(query.order)){
+          return Promise.reject({status:400, msg : 'Bad Request'})
+        }
+        
+        
         const columns = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
         FROM articles
         JOIN comments 
         ON articles.article_id = comments.article_id
         GROUP BY articles.article_id`)
+
           if(columns.rows.some((row)=> row[query.sort_by] !== undefined)){
            const {rows} =  await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
            FROM articles
            JOIN comments 
            ON articles.article_id = comments.article_id
            GROUP BY articles.article_id
-           ORDER BY ${query.sort_by} DESC`)
+           ORDER BY ${query.sort_by} ${query.order.toUpperCase()}`)
            return rows
           }
           else if (query.sort_by === ''){
@@ -66,16 +79,21 @@ async function selectAllArticles(query) {
            JOIN comments 
            ON articles.article_id = comments.article_id
            GROUP BY articles.article_id
-           ORDER BY created_at DESC`)
+           ORDER BY created_at ${query.order.toUpperCase()}`)
            return rows
 
           }
           return Promise.reject({status:404, msg:'Query not found'})
+        }
+        catch(error){
+          console.log(error)
+        }
         
         
 
 
-      case 'order':
+     
+          
 
       case undefined:
         const { rows } = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
