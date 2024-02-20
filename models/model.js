@@ -1,14 +1,7 @@
 const { log } = require("console");
 const db = require("../db/connection");
 const fs = require("fs/promises");
-async function checkIfIdExists(table, key, id) {
-  const { rows } = await db.query(`SELECT * FROM ${table} WHERE ${key} =  $1`, [
-    id,
-  ]);
-  return rows.length > 0
-    ? rows[0]
-    : Promise.reject({ status: 404, msg: "Article Id does not exist" });
-}
+
 
 async function selectTopics() {
   const { rows } = await db.query("SELECT * FROM topics ");
@@ -21,8 +14,20 @@ async function selectApi() {
   return JSON.parse(apidata);
 }
 async function selectArticle(articleId) {
-  //const {rows} = await db.query('SELECT * FROM articles WHERE article_id = $1',[articleId])
-  return checkIfIdExists("articles", "article_id", articleId);
+  
+  const {rows} = await db.query(`SELECT articles.*,COUNT(comments.comment_id ) AS comment_count 
+  FROM articles 
+  JOIN comments
+  ON articles.article_id = comments.article_id
+  WHERE articles.article_id = $1
+  GROUP BY articles.article_id
+  `,[articleId])
+  
+  return rows.length > 0
+    ? rows[0]
+    : Promise.reject({ status: 404, msg: "Article Id does not exist" });
+  
+  
 }
 async function selectAllArticles() {
   const { rows } =
@@ -37,6 +42,10 @@ async function selectAllArticles() {
 }
 
 async function selectCommentsByArticle(article_id) {
+  const validArticleIds = await db.query(`SELECT article_id From articles`)
+   
+    
+   
   const { rows } = await db.query(
     `SELECT comments.comment_id,comments.votes,comments.created_at,comments.author,comments.body,comments.article_id 
     FROM articles
@@ -45,13 +54,11 @@ async function selectCommentsByArticle(article_id) {
     WHERE articles.article_id = $1`,
     [article_id]
   );
+  if(!validArticleIds.rows.some((article)=> {return article.article_id === Number(article_id)})){
+    return Promise.reject({status:404, msg: 'Article Id doesnt exist'})
 
-  return rows.length > 0
-    ? rows
-    : Promise.reject({
-        status: 404,
-        msg: "Comments with this Article Id dont exist",
-      });
+  }
+  return rows
 }
 async function insertComment(commentinfo, articleId) {
   try {
@@ -131,7 +138,7 @@ async function removeComment(commentId){
 
 
     const {rows}= await db.query('DELETE FROM comments WHERE comment_id = $1 RETURNING *',[commentId])
-    console.log(rows)
+   
    return rows.length === 0 ?  Promise.reject({status:404, msg: 'Comment doesnt exist'}) : rows 
 
 }
