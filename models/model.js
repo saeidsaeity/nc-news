@@ -31,8 +31,6 @@ async function selectArticle(articleId) {
 async function selectAllArticles(query) {
     const currentQuery = Object.keys(query)[0]
     const validqueries = ['topic','sort_by','order',undefined]
-    console.log(currentQuery)
-    console.log(Object.keys(query))
     if(validqueries.includes(currentQuery)){
     switch(currentQuery){
 
