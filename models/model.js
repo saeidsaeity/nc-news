@@ -219,6 +219,14 @@ async function selectUserByName(username){
   const {rows}= await db.query('SELECT username, avatar_url, name FROM users WHERE username = $1',[username])
   return rows.length === 0 ?  Promise.reject({status:404, msg: 'User doesnt exist'}) : rows[0]
 }
+async function updateCommentVotes(commentId,changeVotes){
+   
+  const{rows} = await db.query('UPDATE comments SET votes = votes + $1 WHERE comment_id = $2 RETURNING *',[changeVotes,commentId])
+  
+  return rows.length === 0 ?  Promise.reject({status:404, msg: 'Comment doesnt exist'}) : rows[0]
+  
+ 
+}
 module.exports = {
   selectTopics,
   selectApi,
@@ -229,5 +237,6 @@ module.exports = {
   updateArticle,
   removeComment,
   selectUsers,
-  selectUserByName
+  selectUserByName,
+  updateCommentVotes
 };

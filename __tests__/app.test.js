@@ -5,6 +5,7 @@ const testData = require("../db/data/test-data/index");
 const db = require("../db/connection");
 const fs = require('fs/promises');
 const { constrainedMemory } = require("process");
+const { log } = require("console");
 
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
@@ -270,6 +271,9 @@ describe('/api/articles/:article_id/comments endpoint', () => {
     
    
 });
+
+
+
 describe('/api/comments/:comment_id', () => {
 
     describe('DELETE 204 /api/comments/:comment_id ', () => {
@@ -284,10 +288,54 @@ describe('/api/comments/:comment_id', () => {
     test('Delete 400 invalid request', async () => {
      await request(app).delete('/api/comments/banana').expect(400);
     })
-        
+      
+    });
+
+    describe('Patch tests for /api/comments/:comment_id', () => {
+      test('Patch 200', async () => {
+      const data = {inc_votes: 100}
+      const { body } = await request(app).patch('/api/comments/1').send(data).expect(200);
+      
+      expect(body.comment).toMatchObject({
+        comment_id: 1,
+        body: "Oh, I've got compassion running out of my nose, pal! I'm the Sultan of Sentiment!",
+        article_id: 9,
+        author: 'butter_bridge',
+        votes: 116,
+        created_at: expect.any(String)
+      })
+      })
+      
+      test('Patch 400 bad request', async () => {
+      const data = {inc_votes: 'pineapple'}
+      const { body } = await request(app).patch('/api/comments/1').send(data).expect(400);
+      expect(body.msg).toEqual('Bad Request');
+      })
+     test('Patch 200 when given un needed data', async () => {
+     const data = {inc_votes: 5 , date:"1985"}
+     const { body } = await request(app).patch('/api/comments/1').send(data).expect(200);
+     expect(body.comment).toMatchObject({
+      comment_id: 1,
+      body: "Oh, I've got compassion running out of my nose, pal! I'm the Sultan of Sentiment!",
+      article_id: 9,
+      author: 'butter_bridge',
+      votes:21,
+      created_at: expect.any(String)
+    })
+  })
+    test('Patch 404 when comment doesnt exist', async () => {
+    const data = {inc_votes: 5}
+    const { body } = await request(app).patch('/api/comments/300').send(data).expect(404);
+    expect(body.msg).toEqual('Comment doesnt exist');
+    })
+     
     });
     
 });
+
+
+
+
 
 describe('/api/users', () => {
     test('gets 200', async () => {
