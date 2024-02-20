@@ -174,7 +174,22 @@ describe('tests for /api/articles Queries advance', () => {
       })
       
     });
-
+describe('POST /api/articles', () => {
+  test('POST 201', async () => {
+  const data = {
+  title: "Living in the shadow of a great man",
+  topic: "paper",
+  author: "butter_bridge",
+  body: "I find this existence challenging",
+  created_at: 1594329060000,
+  votes: 100,
+  article_img_url:
+    "https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700"}
+  const { body } = await request(app).post('/api/articles').send(data).expect(201);
+  console.log(body)
+  })
+  
+});
 
 
     

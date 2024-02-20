@@ -54,30 +54,25 @@ async function selectAllArticles(query) {
         if(!['asc','desc'].includes(query.order)){
           return Promise.reject({status:400, msg : 'Bad Request'})
         }
-        
-        
-        const columns = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
+        let queryString = `SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
         FROM articles
         JOIN comments 
         ON articles.article_id = comments.article_id
-        GROUP BY articles.article_id`)
-
+        GROUP BY articles.article_id`
+        
+        const columns = await db.query(queryString)
+          
+          
           if(columns.rows.some((row)=> row[query.sort_by] !== undefined)){
-           const {rows} =  await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
-           FROM articles
-           JOIN comments 
-           ON articles.article_id = comments.article_id
-           GROUP BY articles.article_id
-           ORDER BY ${query.sort_by} ${query.order.toUpperCase()}`)
+            
+          queryString = queryString + ` ORDER BY ${query.sort_by} ${query.order.toUpperCase()}`
+          console.log(queryString)
+           const {rows} =  await db.query(queryString)
            return rows
           }
           else if (query.sort_by === ''){
-            const {rows} =  await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
-           FROM articles
-           JOIN comments 
-           ON articles.article_id = comments.article_id
-           GROUP BY articles.article_id
-           ORDER BY created_at ${query.order.toUpperCase()}`)
+            queryString = queryString + ` ORDER BY created_at ${query.order.toUpperCase()}`
+            const {rows} =  await db.query(queryString)
            return rows
 
           }
@@ -227,6 +222,20 @@ async function updateCommentVotes(commentId,changeVotes){
   
  
 }
+async function insertArticles(articleData){
+  //have to check if topic is in topics database first
+  if(articleData.article_img_url === undefined){
+    articleData.article_img_url = `https://images.pexels.com/photos/97050/pexels-photo-97050.jpeg?w=700&h=700`
+  }
+  try{
+  console.log(articleData)
+  const {rows} = await db.query('INSERT INTO articles (title,topic,author,body,article_img_url) VALUES ($1,$2,$3,$4,$5) RETURNING *',[articleData.title,articleData.topic,articleData.author,articleData.body,articleData.article_img_url])
+  return rows
+  }
+  catch(error){
+    console.log(error);
+  }
+}
 module.exports = {
   selectTopics,
   selectApi,
@@ -238,5 +247,6 @@ module.exports = {
   removeComment,
   selectUsers,
   selectUserByName,
-  updateCommentVotes
+  updateCommentVotes,
+  insertArticles
 };
