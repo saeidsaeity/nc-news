@@ -37,7 +37,8 @@ describe("tests for /api/articles/:article_id endpoint ", () => {
         body: 'I find this existence challenging',
         created_at: '2020-07-09T20:11:00.000Z',
         votes: 100,
-        article_img_url: 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700'
+        article_img_url: 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700',
+        comment_count: expect.any(String)
       }
     expect(body.article).toMatchObject(expectoutput)
   });
@@ -165,9 +166,9 @@ describe('/api/articles/:article_id/comments endpoint', () => {
     })
 
     })
-    test('gets 404 when an article id doesnt exist or article doesnt have comments', async () => {
+    test('gets 404 when an article id doesnt exist', async () => {
     const { body } = await request(app).get('/api/articles/1000/comments').expect(404);
-    expect(body.msg).toEqual('Comments with this Article Id dont exist')
+    expect(body.msg).toEqual('Article Id doesnt exist')
     })
     test('gets 400 when a bad request is made', async () => {
     const { body } = await request(app).get('/api/articles/banana/comments').expect(400);
