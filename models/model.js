@@ -100,18 +100,15 @@ async function selectAllArticles(query) {
   return rows;
       default:
   }
+}
   else{
     return Promise.reject({status:400,msg:'Bad Query'})
   }
 
-
-    else{
-        return Promise.reject({status:400,msg:'Bad Query'})
-    }
   
+
+
 }
-
-
 
     
     
