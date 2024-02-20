@@ -4,6 +4,7 @@ const seed = require("../db/seeds/seed");
 const testData = require("../db/data/test-data/index");
 const db = require("../db/connection");
 const fs = require('fs/promises');
+const { constrainedMemory } = require("process");
 
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
@@ -302,5 +303,20 @@ describe('/api/users', () => {
 
     })
     
+});
+
+describe('/api/users/:username', () => {
+  test('gets 200 when request sent to /api/users/:username', async () => {
+  const { body } = await request(app).get('/api/users/butter_bridge').expect(200);
+  expect(body.user).toMatchObject({username: 'butter_bridge',
+  avatar_url: 'https://www.healthytherapies.com/wp-content/uploads/2016/06/Lime3.jpg',
+  name: 'jonny'})
+  })
+  test('gets 404 when username doesnt exist', async () => {
+  const { body } = await request(app).get('/api/users/spaceinvader').expect(404);
+  expect(body.msg).toEqual('User doesnt exist');
+  })
+
+  
 });
 

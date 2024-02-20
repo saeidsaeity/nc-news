@@ -103,9 +103,6 @@ async function selectAllArticles(query) {
     return Promise.reject({status:400,msg:'Bad Query'})
   }
 
-  
-
-
 }
 
     
@@ -216,7 +213,12 @@ async function selectUsers(){
     return rows
 
 }
-    
+  
+async function selectUserByName(username){
+
+  const {rows}= await db.query('SELECT username, avatar_url, name FROM users WHERE username = $1',[username])
+  return rows.length === 0 ?  Promise.reject({status:404, msg: 'User doesnt exist'}) : rows[0]
+}
 module.exports = {
   selectTopics,
   selectApi,
@@ -226,5 +228,6 @@ module.exports = {
   insertComment,
   updateArticle,
   removeComment,
-  selectUsers
+  selectUsers,
+  selectUserByName
 };
