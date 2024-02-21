@@ -30,66 +30,70 @@ async function selectArticle(articleId) {
 }
 async function selectAllArticles(query) {
     const currentQuery = Object.keys(query)[0]
-    const validqueries = ['topic','sort_by','order',undefined]
+    const validqueries = ['topic','sort_by','order','limit',undefined]
     if(validqueries.includes(currentQuery)){
+      let queryString = `
+      SELECT articles.author, title, articles.article_id, topic, articles.created_at, 
+      articles.votes, article_img_url, COUNT(comments.comment_id) AS comment_count 
+      FROM articles
+      LEFT JOIN comments ON articles.article_id = comments.article_id
+  `
     switch(currentQuery){
-
       case 'topic':
-        const topics =await db.query(`SELECT topic FROM articles`)
-        if(topics.rows.some((topic)=> topic.topic === query.topic)){
-          const articledata = await db.query(`SELECT * from articles WHERE topic = $1`,[query.topic])
-          return articledata.rows
+        
+      queryString += `WHERE topic = $1 GROUP BY articles.article_id`
+      let articles = await db.query(queryString, [query.topic]);
+      if(query.limit !== undefined){
+        if(query.p === undefined){
+          query.p = 1
+        }
+        const total_count = articles.rows.length
+        queryString += ` LIMIT ${query.limit} OFFSET ${query.p * query.limit - query.limit}`
+        articles = await db.query(queryString, [query.topic]);
+        return articles.rows.length > 0 ? {articles: articles.rows,total_count} : Promise.reject({ status: 404, msg: 'Query not found' });
+      } 
       
-          }
-          return Promise.reject({status:404, msg:'Query not found'})
-
+        return articles.rows.length > 0 ? {articles:articles.rows} : Promise.reject({ status: 404, msg: 'Query not found' });
+        
+  
+   
       case 'sort_by':
-        try{
-        
       
-        if(query.order === undefined){
-          query.order = 'desc'
-        }
+        if(query.order === undefined){query.order = 'desc'}
+        if(!['asc','desc'].includes(query.order)){return Promise.reject({status:400, msg : 'Bad Request'})}
+        queryString += `GROUP BY articles.article_id ORDER BY ${query.sort_by !== '' ? query.sort_by : 'created_at'} ${query.order.toUpperCase()}`
+        const articleData  = await db.query(queryString)
         
-        if(!['asc','desc'].includes(query.order)){
-          return Promise.reject({status:400, msg : 'Bad Request'})
-        }
-        let queryString = `SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
-        FROM articles
-        JOIN comments 
-        ON articles.article_id = comments.article_id
-        GROUP BY articles.article_id`
-        
-        const columns = await db.query(queryString)
-          
-          
-          if(columns.rows.some((row)=> row[query.sort_by] !== undefined)){
-            
-          queryString = queryString + ` ORDER BY ${query.sort_by} ${query.order.toUpperCase()}`
-           const {rows} =  await db.query(queryString)
-           return rows
+        if(query.limit !== undefined){
+          if(query.p === undefined){
+            query.p = 1
           }
-          else if (query.sort_by === ''){
-            queryString = queryString + ` ORDER BY created_at ${query.order.toUpperCase()}`
-            const {rows} =  await db.query(queryString)
-           return rows
+          const total_count = articleData.rows.length
+          queryString += ` LIMIT ${query.limit} OFFSET ${query.p * query.limit - query.limit}`
+          let articles = await db.query(queryString);
+          return articles.rows.length > 0 ? {articles: articles.rows,total_count} : Promise.reject({ status: 404, msg: 'Query not found' });
+        } 
+        
+        return {articles:articleData.rows}
+      case 'limit':
+        
+          queryString += 'GROUP BY articles.article_id'
+          const lengthcheck = await db.query(queryString)
+        if(query.p === undefined){
+          query.p = 1
+        }
+        const total_count = lengthcheck.rows.length
+        queryString += ` LIMIT ${query.limit} OFFSET ${query.p * query.limit - query.limit}`
+        let article= await db.query(queryString);
+        return article.rows.length > 0 ? {articles: article.rows,total_count} : Promise.reject({ status: 404, msg: 'Query not found' });
+      
+     
 
-          }
-          return Promise.reject({status:404, msg:'Query not found'})
-        }
-        catch(error){
-          console.log(error)
-        }
-        
+     
       case undefined:
-        const { rows } = await db.query(`SELECT articles.author,title,articles.article_id,topic,articles.created_at,articles.votes,article_img_url,COUNT(comments.comment_id) AS comment_count 
-          FROM articles
-          JOIN comments 
-          ON articles.article_id = comments.article_id
-          GROUP BY articles.article_id
-          ORDER BY articles.created_at DESC
-          `);
-  return rows;
+        queryString += `GROUP BY articles.article_id ORDER BY articles.created_at DESC`
+        const { rows } = await db.query(queryString);
+        return {articles:rows};
       default:
   }
 }
@@ -109,9 +113,6 @@ async function selectAllArticles(query) {
 
 async function selectCommentsByArticle(article_id) {
   const validArticleIds = await db.query(`SELECT article_id From articles`)
-   
-    
-   
   const { rows } = await db.query(
     `SELECT comments.comment_id,comments.votes,comments.created_at,comments.author,comments.body,comments.article_id 
     FROM articles
