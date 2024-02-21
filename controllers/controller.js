@@ -20,7 +20,7 @@ const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByAr
     async function getArticles(req,res,next){
         try{const query = req.query
             const articles = await selectAllArticles(query)
-            res.status(200).send({articles})}
+            res.status(200).send(articles)}
         catch(error){next(error)}}
         
     async function getCommentsByArticle(req,res,next){

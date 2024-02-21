@@ -126,7 +126,6 @@ describe('tests for /api/articles endpoint ', () => {
         title: 'UNCOVERED: catspiracy to bring down democracy',
         topic: 'cats',
         author: 'rogersop',
-        body: 'Bastet walks amongst us, and the cats are taking arms!',
         created_at: expect.any(String),
         votes: 0,
         article_img_url: 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700'
@@ -162,18 +161,79 @@ describe('tests for /api/articles Queries advance', () => {
   expect(body.msg).toEqual("Bad Request");
   })
   test('gets 400 bad query', async () => {
-  const { body } = await request(app).get('/api/articles?sort_by=commnt&order=asc').expect(404);
-  expect(body.msg).toEqual("Query not found");
+  const { body } = await request(app).get('/api/articles?sort_by=commnt&order=asc').expect(400);
+  expect(body.msg).toEqual("Bad Request");
   })
 });
 
 //here
-    describe('ADVANCED QUERIES', () => {
-      test('gets 200 when sent sortby quert', async () => {
-      const { body } = await request(app).get('/api/articles?sort_by').expect(200);
-      })
+    describe('ADVANCED QUERIES with page limits', () => {
+      test('gets 200 when sent topic amd limit query query', async () => {
+      const { body } = await request(app).get('/api/articles?topic=mitch&limit=2&p=1').expect(200);
       
+      expect(body.articles.length).not.toEqual(0);
+      body.articles.forEach((article)=> expect(article).toMatchObject({
+        article_id: expect.any(Number),
+        title: expect.any(String),
+        topic: expect.any(String),
+        author: expect.any(String),
+        created_at: expect.any(String),
+        votes: expect.any(Number),
+        article_img_url: expect.any(String)
+      }))
+
+      expect(body.total_count).toEqual(12);
+      })
+      test('gets 200 when sent sort_by amd limit query query', async () => {
+        const { body } = await request(app).get('/api/articles?sort_by=author&limit=2&p=1').expect(200);
+        
+        expect(body.articles.length).not.toEqual(0);
+      
+        body.articles.forEach((article)=> expect(article).toMatchObject({
+          article_id: expect.any(Number),
+          title: expect.any(String),
+          topic: expect.any(String),
+          author: expect.any(String),
+          created_at: expect.any(String),
+          votes: expect.any(Number),
+          article_img_url: expect.any(String)
+        }))
+ 
+        expect(body.total_count).toEqual(13);
+        })
+        test('gets 404 when page doesnt exist', async () => {
+        const { body } = await request(app).get('/api/articles?sort_by=author&limit=10&p=4').expect(404);
+       expect(body.msg).toEqual('Query not found');
+
+        })
+        test('gets 200 when given limit larger than total_count', async () => {
+        const { body } = await request(app).get('/api/articles?sort_by=author&limit=100&p=1').expect(200);
+        body.articles.forEach((article)=> expect(article).toMatchObject({
+          article_id: expect.any(Number),
+          title: expect.any(String),
+          topic: expect.any(String),
+          author: expect.any(String),
+          created_at: expect.any(String),
+          votes: expect.any(Number),
+          article_img_url: expect.any(String)
+        }))
+        
+        })
+        test('gets 200', async () => {
+        const { body } = await request(app).get('/api/articles?limit=100&p=1').expect(200);
+        body.articles.forEach((article)=> expect(article).toMatchObject({
+          article_id: expect.any(Number),
+          title: expect.any(String),
+          topic: expect.any(String),
+          author: expect.any(String),
+          created_at: expect.any(String),
+          votes: expect.any(Number),
+          article_img_url: expect.any(String)
+        }))
+
+        })
     });
+
 describe('POST /api/articles', () => {
   test('POST 201', async () => {
   const data = {
