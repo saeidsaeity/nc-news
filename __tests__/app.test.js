@@ -369,7 +369,59 @@ describe('/api/articles/:article_id/comments endpoint', () => {
     expect(body.msg).toEqual('Bad Request');
     })
 
+    describe('ADVANCED api/articles/:article_id/comments endpoint', () => {
+      test('gets 200', async () => {
+      const { body } = await request(app).get('/api/articles/3/comments?limit=10&p=1').expect(200);
+      expect(body.comments.length).toEqual(2);
+      
+      body.comments.forEach((comment)=> {
+        expect(comment).toMatchObject({
+        comment_id:expect.any(Number),
+        votes:expect.any(Number),
+        created_at:expect.any(String),
+        author:expect.any(String),
+        body:expect.any(String),
+        article_id:expect.any(Number)
 
+        })
+    })
+})
+      test('gets 200 for page 2', async () => {
+        const { body } = await request(app).get('/api/articles/3/comments?limit=1&p=2').expect(200);
+        expect(body.comments.length).toEqual(1);
+        expect(body.total_count).toEqual(2)
+        
+        body.comments.forEach((comment)=> {
+          expect(comment).toMatchObject({
+          comment_id:expect.any(Number),
+          votes:expect.any(Number),
+          created_at:expect.any(String),
+          author:expect.any(String),
+          body:expect.any(String),
+          article_id:expect.any(Number)
+  
+          })
+      })
+  
+        })
+        test('gets 200 when page count doesnt have comments', async () => {
+        const { body } = await request(app).get('/api/articles/3/comments?limit=1&p=7').expect(200);
+        expect(body.comments.length).toEqual(0);
+        })
+      test('gets 400 for bad page request', async () => {
+      const { body } = await request(app).get('/api/articles/3/comments?limit=1&p=burger').expect(400);
+      expect(body.msg).toEqual('Bad Request');
+      })
+      test('gets 400 for bad page limit ', async () => {
+      const { body } = await request(app).get('/api/articles/3/comments?limit=burger&p=2').expect(400);
+      expect(body.msg).toEqual('Bad Request');
+      })
+      test('gets 200 limit defaults to 10 when limit isnt passed a number', async () => {
+      const { body } = await request(app).get('/api/articles/1/comments?limit&p=1').expect(200);
+      expect(body.comments.length).toEqual(10);
+
+      })
+    });
 
 
     describe('POST /api/articles/:article_id/comments endpoint', () => {

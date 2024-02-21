@@ -111,21 +111,37 @@ async function selectAllArticles(query) {
 
 
 
-async function selectCommentsByArticle(article_id) {
+async function selectCommentsByArticle(article_id,page) {
   const validArticleIds = await db.query(`SELECT article_id From articles`)
+  let queryString = `SELECT comments.comment_id,comments.votes,comments.created_at,comments.author,comments.body,comments.article_id 
+  FROM articles
+  JOIN comments
+  ON articles.article_id = comments.article_id
+  WHERE articles.article_id = $1`
   const { rows } = await db.query(
-    `SELECT comments.comment_id,comments.votes,comments.created_at,comments.author,comments.body,comments.article_id 
-    FROM articles
-    JOIN comments
-    ON articles.article_id = comments.article_id
-    WHERE articles.article_id = $1`,
+    queryString,
     [article_id]
   );
+
+  if(page.limit === ''){
+    page.limit = 10
+  }
+  if(page.limit !== undefined){
+    if(page.p === undefined){
+      page.p = 1
+    }
+    const total_count = rows.length
+    queryString += ` LIMIT ${page.limit} OFFSET ${page.p * page.limit - page.limit}`
+    let article= await db.query(queryString,[article_id]);
+    return  {comments: article.rows,total_count}
+
+  }
+
   if(!validArticleIds.rows.some((article)=> {return article.article_id === Number(article_id)})){
     return Promise.reject({status:404, msg: 'Article Id doesnt exist'})
 
   }
-  return rows
+  return {comments:rows}
 }
 async function insertComment(commentinfo, articleId) {
 

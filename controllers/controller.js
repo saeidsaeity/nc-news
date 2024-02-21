@@ -25,8 +25,10 @@ const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByAr
         
     async function getCommentsByArticle(req,res,next){
         try{const articleId = req.params.article_id
-            const comments = await selectCommentsByArticle(articleId)
-            res.status(200).send({comments})}
+            const page = req.query
+            
+            const comments = await selectCommentsByArticle(articleId,page)
+            res.status(200).send(comments)}
         catch(error){next(error)}}
 
     async function postComment(req,res,next){
