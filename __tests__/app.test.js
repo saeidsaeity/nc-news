@@ -181,15 +181,103 @@ describe('POST /api/articles', () => {
   topic: "paper",
   author: "butter_bridge",
   body: "I find this existence challenging",
-  created_at: 1594329060000,
-  votes: 100,
+ 
   article_img_url:
     "https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700"}
   const { body } = await request(app).post('/api/articles').send(data).expect(201);
-  console.log(body)
+ 
+  expect(body.article).toMatchObject(
+      {
+        article_id: 14,
+        title: 'Living in the shadow of a great man',
+        topic: 'paper',
+        author: 'butter_bridge',
+        body: 'I find this existence challenging',
+        created_at: expect.any(String),
+        votes: 0,
+        article_img_url: 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700'
+      }
+
+    
+  )
   })
-  
+  test('Post 201 when not given url', async () => {
+    const data = {
+      title: "Living in the shadow of a great man",
+      topic: "paper",
+      author: "butter_bridge",
+      body: "I find this existence challenging",
+     
+    }
+      const { body } = await request(app).post('/api/articles').send(data).expect(201);
+      expect(body.article).toMatchObject(
+          {
+            article_id: 14,
+            title: 'Living in the shadow of a great man',
+            topic: 'paper',
+            author: 'butter_bridge',
+            body: 'I find this existence challenging',
+            created_at: expect.any(String),
+            votes: 0,
+            article_img_url: "https://images.pexels.com/photos/97050/pexels-photo-97050.jpeg?w=700&h=700"
+          }
+    
+        
+      )
+    
+  });
+  test('POST 400 when given wrong format', async () => {
+  const data = {
+    titles: 12,
+    topic: "paper",
+    authors: "butter_bridge",
+    body: "I find this existence challenging",
+    created_at: 1594329060000,
+    votes: 100
+  }
+  const { body } = await request(app).post('/api/articles').send(data).expect(400);
+ expect(body.msg).toEqual('Bad Request');
+  })
+
+
+  test('POST 201 when given extra data', async () => {
+  const data =  {
+  article_id: 14,
+  title: 'Living in the shadow of a great man',
+  topic: 'paper',
+  author: 'butter_bridge',
+  body: 'I find this existence challenging',
+  created_at: expect.any(String),
+  votes: 0,
+  article_img_url: 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700',
+  article_meta_data:'w=500 h=5000'
+}
+  const { body } = await request(app).post('/api/articles').send(data).expect(201);
+  expect(body.article).toMatchObject({ article_id: 14,
+    title: 'Living in the shadow of a great man',
+    topic: 'paper',
+    author: 'butter_bridge',
+    body: 'I find this existence challenging',
+    created_at: expect.any(String),
+    votes: 0,
+    article_img_url: "https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700"})
+  })
 });
+test('POST 404 when topic doesnt exist', async () => {
+  const data =  {
+    article_id: 14,
+    title: 'Living in the shadow of a great man',
+    topic: 'football',
+    author: 'butter_bridge',
+    body: 'I find this existence challenging',
+    created_at: expect.any(String),
+    votes: 0,
+    article_img_url: 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700',
+    article_meta_data:'w=500 h=5000'
+  }
+const { body } = await request(app).post('/api/articles').send(data).expect(404);
+expect(body.msg).toEqual("topic not found in topics database make a post request to topics first");
+})
 
 
     

@@ -66,7 +66,6 @@ async function selectAllArticles(query) {
           if(columns.rows.some((row)=> row[query.sort_by] !== undefined)){
             
           queryString = queryString + ` ORDER BY ${query.sort_by} ${query.order.toUpperCase()}`
-          console.log(queryString)
            const {rows} =  await db.query(queryString)
            return rows
           }
@@ -224,17 +223,22 @@ async function updateCommentVotes(commentId,changeVotes){
 }
 async function insertArticles(articleData){
   //have to check if topic is in topics database first
+  
+  const topics = await db.query('SELECT slug FROM topics') 
+  if(!topics.rows.some((topic)=> topic.slug === articleData.topic)){
+    return Promise.reject({status:404, msg: 'topic not found in topics database make a post request to topics first'})
+  }
+  
   if(articleData.article_img_url === undefined){
     articleData.article_img_url = `https://images.pexels.com/photos/97050/pexels-photo-97050.jpeg?w=700&h=700`
   }
-  try{
-  console.log(articleData)
+
+  //console.log(articleData)
   const {rows} = await db.query('INSERT INTO articles (title,topic,author,body,article_img_url) VALUES ($1,$2,$3,$4,$5) RETURNING *',[articleData.title,articleData.topic,articleData.author,articleData.body,articleData.article_img_url])
-  return rows
-  }
-  catch(error){
-    console.log(error);
-  }
+  return rows[0]
+
+
+  
 }
 module.exports = {
   selectTopics,
