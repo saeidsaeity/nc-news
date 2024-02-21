@@ -253,9 +253,12 @@ async function insertArticles(articleData){
   //console.log(articleData)
   const {rows} = await db.query('INSERT INTO articles (title,topic,author,body,article_img_url) VALUES ($1,$2,$3,$4,$5) RETURNING *',[articleData.title,articleData.topic,articleData.author,articleData.body,articleData.article_img_url])
   return rows[0]
+}
+async function insertTopic(newTopic){
 
+ const {rows} = await db.query(`INSERT INTO topics (slug,description) VALUES ($1,$2) RETURNING *`, [newTopic.slug,newTopic.description])
+  return rows[0]
 
-  
 }
 module.exports = {
   selectTopics,
@@ -269,5 +272,6 @@ module.exports = {
   selectUsers,
   selectUserByName,
   updateCommentVotes,
-  insertArticles
+  insertArticles,
+  insertTopic
 };

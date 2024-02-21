@@ -582,4 +582,25 @@ describe('/api/users/:username', () => {
 
   
 });
-
+describe('post /API/TOPICS', () => {
+  test('POST 201', async () => {
+  const data = {
+    "slug": "topic name here",
+    "description": "description here"
+  }
+  const { body } = await request(app).post('/api/topics').send(data).expect(201);
+  expect(body.topic).toMatchObject({
+    "slug": "topic name here",
+    "description": "description here"
+  })
+  })
+  test('POST 201', async () => {
+  const data = {
+    "slugs": "topic name here",
+    "descriptions": "description here"
+  }
+  const { body } = await request(app).post('/api/topics').send(data).expect(400)
+  expect(body.msg).toEqual('Bad Request');
+ 
+  })
+});
