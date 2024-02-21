@@ -604,3 +604,13 @@ describe('post /API/TOPICS', () => {
  
   })
 });
+describe('delete /api/articles/:article_id', () => {
+  test('Delete 204', async () => {
+   await request(app).delete('/api/articles/2').expect(204);
+  })
+  test('Delete 204', async () => {
+   const {body} = await request(app).delete('/api/articles/111').expect(404);
+   expect(body.msg).toEqual('Article doesnt exist');
+  })
+  
+});

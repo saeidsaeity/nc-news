@@ -1,4 +1,4 @@
-const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByArticle,insertComment,updateArticle,removeComment,selectUsers,selectUserByName,updateCommentVotes, insertArticles, insertTopic} = require('../models/model');
+const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByArticle,insertComment,updateArticle,removeComment,selectUsers,selectUserByName,updateCommentVotes, insertArticles, insertTopic,removeArticle} = require('../models/model');
 
    
     async function getTopics(req,res,next) {
@@ -91,4 +91,15 @@ const {selectTopics,selectApi,selectArticle,selectAllArticles,selectCommentsByAr
             
         }
     }
-module.exports = {getTopics,getApi,getArticleById,getArticles,getCommentsByArticle,postComment,patchArticle,deleteComment,getUsers,getUserByName,patchCommentVotes,postArticle,postTopic}
+    async function deleteArticle(req,res,next){
+        try {
+            
+            await removeArticle(req.params.article_id)
+            res.status(204).send('')
+
+        } catch (error) {
+            next(error)
+            
+        }
+    }
+module.exports = {getTopics,getApi,getArticleById,getArticles,getCommentsByArticle,postComment,patchArticle,deleteComment,getUsers,getUserByName,patchCommentVotes,postArticle,postTopic,deleteArticle}

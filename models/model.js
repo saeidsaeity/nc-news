@@ -260,6 +260,10 @@ async function insertTopic(newTopic){
   return rows[0]
 
 }
+async function removeArticle(articleId){
+ const {rows} = await db.query(`DELETE FROM articles where article_id = $1 RETURNING *`,[articleId])
+  return rows.length === 0 ?  Promise.reject({status:404, msg: 'Article doesnt exist'}) : rows 
+}
 module.exports = {
   selectTopics,
   selectApi,
@@ -273,5 +277,6 @@ module.exports = {
   selectUserByName,
   updateCommentVotes,
   insertArticles,
-  insertTopic
+  insertTopic,
+  removeArticle
 };
