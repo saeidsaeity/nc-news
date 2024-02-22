@@ -12,15 +12,14 @@ class ArticlesModel{
     GROUP BY articles.article_id
     `,[articleId])
     
-    return rows.length > 0
-      ? rows[0]
-      : Promise.reject({ status: 404, msg: "Article Id does not exist" });
+    return rows.length > 0?rows[0]: Promise.reject({ status: 404, msg: "Article Id does not exist" });
     
     
   }
   async selectAllArticles(query) {
     const currentQuery = Object.keys(query)[0]
     const validqueries = ['topic','sort_by','order','limit',undefined]
+    query.p = query.p || 1
     if(validqueries.includes(currentQuery)){
       let queryString = `
       SELECT articles.author, title, articles.article_id, topic, articles.created_at, 
@@ -28,70 +27,56 @@ class ArticlesModel{
       FROM articles
       LEFT JOIN comments ON articles.article_id = comments.article_id
   `
+  const offset = (query.p * query.limit )-query.limit
+  const limit =  ` LIMIT $2 OFFSET $3`
+ 
     switch(currentQuery){
       case 'topic':
         
       queryString += `WHERE topic = $1 GROUP BY articles.article_id`
       let articles = await db.query(queryString, [query.topic]);
       if(query.limit !== undefined){
-        if(query.p === undefined){
-          query.p = 1
-        }
         const total_count = articles.rows.length
-        queryString += ` LIMIT ${query.limit} OFFSET ${query.p * query.limit - query.limit}`
-        articles = await db.query(queryString, [query.topic]);
+        
+        queryString += limit
+        articles = await db.query(queryString, [query.topic,query.limit,offset]);
         return articles.rows.length > 0 ? {articles: articles.rows,total_count} : Promise.reject({ status: 404, msg: 'Query not found' });
       } 
-      
         return articles.rows.length > 0 ? {articles:articles.rows} : Promise.reject({ status: 404, msg: 'Query not found' });
-        
-  
-   
       case 'sort_by':
-      
-        if(query.order === undefined){query.order = 'desc'}
+        query.order === undefined ? query.order = 'desc': ''
         if(!['asc','desc'].includes(query.order)){return Promise.reject({status:400, msg : 'Bad Request'})}
         queryString += `GROUP BY articles.article_id ORDER BY ${query.sort_by !== '' ? query.sort_by : 'created_at'} ${query.order.toUpperCase()}`
         const articleData  = await db.query(queryString)
         
         if(query.limit !== undefined){
-          if(query.p === undefined){
-            query.p = 1
-          }
           const total_count = articleData.rows.length
-          queryString += ` LIMIT ${query.limit} OFFSET ${query.p * query.limit - query.limit}`
-          let articles = await db.query(queryString);
+          queryString += ` LIMIT $1 OFFSET $2`
+          let articles = await db.query(queryString,[query.limit,offset]);
           return articles.rows.length > 0 ? {articles: articles.rows,total_count} : Promise.reject({ status: 404, msg: 'Query not found' });
         } 
-        
         return {articles:articleData.rows}
       case 'limit':
+        queryString += 'GROUP BY articles.article_id'
+        const lengthcheck = await db.query(queryString)
         
-          queryString += 'GROUP BY articles.article_id'
-          const lengthcheck = await db.query(queryString)
-        if(query.p === undefined){
-          query.p = 1
-        }
         const total_count = lengthcheck.rows.length
-        queryString += ` LIMIT ${query.limit} OFFSET ${query.p * query.limit - query.limit}`
-        let article= await db.query(queryString);
+        queryString += ` LIMIT $1 OFFSET $2`
+        let article= await db.query(queryString,[query.limit,offset]);
         return article.rows.length > 0 ? {articles: article.rows,total_count} : Promise.reject({ status: 404, msg: 'Query not found' });
       
-     
-
-     
       case undefined:
         queryString += `GROUP BY articles.article_id ORDER BY articles.created_at DESC`
         const { rows } = await db.query(queryString);
         return {articles:rows};
       default:
   }
-}
-  else{
-    return Promise.reject({status:400,msg:'Bad Query'})
-  }
+    }
+  return Promise.reject({status:400,msg:'Bad Query'})
 
+ 
 }
+
 
 async selectCommentsByArticle(article_id,page) {
   const validArticleIds = await db.query(`SELECT article_id From articles`)
@@ -104,36 +89,25 @@ async selectCommentsByArticle(article_id,page) {
     queryString,
     [article_id]
   );
-
-  if(page.limit === ''){
-    page.limit = 10
-  }
+  page.limit === ''?page.limit = 10: ''
   if(page.limit !== undefined){
-    if(page.p === undefined){
-      page.p = 1
-    }
+    
+    page.p === page.p|| 1
     const total_count = rows.length
-    queryString += ` LIMIT ${page.limit} OFFSET ${page.p * page.limit - page.limit}`
-    let article= await db.query(queryString,[article_id]);
+    const offset = (page.p * page.limit )-page.limit
+    queryString += ` LIMIT $2 OFFSET $3 `
+    let article= await db.query(queryString,[article_id,page.limit,offset]);
     return  {comments: article.rows,total_count}
+    
 
   }
-
-  if(!validArticleIds.rows.some((article)=> {return article.article_id === Number(article_id)})){
-    return Promise.reject({status:404, msg: 'Article Id doesnt exist'})
-
-  }
-  return {comments:rows}
+  return !validArticleIds.rows.some((article)=> {return article.article_id === Number(article_id)})? Promise.reject({status:404, msg: 'Article Id doesnt exist'}): {comments:rows}
 }
+
+
 async insertComment(commentinfo, articleId) {
 
-  if (
-    (
-      await db.query("SELECT * FROM articles WHERE article_id = $1", [
-        articleId,
-      ])
-    ).rows.length === 0
-  ) {
+  if ((await db.query("SELECT * FROM articles WHERE article_id = $1", [articleId,])).rows.length === 0) {
     return Promise.reject({ status: 404, msg: "Article not found" });
   }
   
@@ -143,13 +117,7 @@ async insertComment(commentinfo, articleId) {
   if(typeof commentinfo.username !== 'string'|| typeof commentinfo.body !== 'string'){
     return Promise.reject({status :400,msg: 'Bad Request'})
   }
-  if (
-    (
-      await db.query("SELECT username FROM users WHERE username = $1", [
-        commentinfo.username,
-      ])
-    ).rows.length === 0
-  ) {
+  if ( (await db.query("SELECT username FROM users WHERE username = $1", [ commentinfo.username,])).rows.length === 0) {
     return Promise.reject({
       status: 404,
       msg: "username doesnt exist create a profile first before commenting",
@@ -168,9 +136,7 @@ async insertComment(commentinfo, articleId) {
 
 }
 async updateArticle(adjustVotes, article_id) {
- 
-    
-    
+  
   if ((await db.query("SELECT * FROM articles WHERE article_id = $1", [article_id,])).rows.length === 0) {
     return Promise.reject({ status: 404, msg: "article doesnt exist" });
   }
@@ -202,30 +168,20 @@ async removeArticle(articleId){
   if(!topics.rows.some((topic)=> topic.slug === articleData.topic)){
     return Promise.reject({status:404, msg: 'topic not found in topics database make a post request to topics first'})
   }
-  
-  if(articleData.article_img_url === undefined){
-    articleData.article_img_url = `https://images.pexels.com/photos/97050/pexels-photo-97050.jpeg?w=700&h=700`
-  }
-
-  //console.log(articleData)
+  articleData.article_img_url = articleData.article_img_url || `https://images.pexels.com/photos/97050/pexels-photo-97050.jpeg?w=700&h=700`
   const {rows} = await db.query('INSERT INTO articles (title,topic,author,body,article_img_url) VALUES ($1,$2,$3,$4,$5) RETURNING *',[articleData.title,articleData.topic,articleData.author,articleData.body,articleData.article_img_url])
   return rows[0]
 }
-
-
 }
 
 class TopicsModel{
   
   async insertTopic(newTopic){
-
     const {rows} = await db.query(`INSERT INTO topics (slug,description) VALUES ($1,$2) RETURNING *`, [newTopic.slug,newTopic.description])
-     return rows[0]
-   
+    return rows[0]
    }
    async selectTopics() {
     const { rows } = await db.query("SELECT * FROM topics ");
-  
     return rows;
   }
 }

@@ -92,7 +92,6 @@ class TopicsController{
                 const topic =await this.topicsModel.insertTopic(newTopic)
                 res.status(201).send({topic})
             } catch (error) {
-                console.log(error);
                 next(error)
                 
             }
