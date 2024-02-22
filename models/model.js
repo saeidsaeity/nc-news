@@ -1,34 +1,24 @@
-const { log } = require("console");
+
 const db = require("../db/connection");
 const fs = require("fs/promises");
-
-async function selectTopics() {
-  const { rows } = await db.query("SELECT * FROM topics ");
-
-  return rows;
-}
-async function selectApi() {
-  const apidata = await fs.readFile(`${__dirname}/../endpoints.json`);
-
-  return JSON.parse(apidata);
-}
-async function selectArticle(articleId) {
+class ArticlesModel{
+  async selectArticle(articleId) {
   
-  const {rows} = await db.query(`SELECT articles.*,COUNT(comments.comment_id ) AS comment_count 
-  FROM articles 
-  JOIN comments
-  ON articles.article_id = comments.article_id
-  WHERE articles.article_id = $1
-  GROUP BY articles.article_id
-  `,[articleId])
-  
-  return rows.length > 0
-    ? rows[0]
-    : Promise.reject({ status: 404, msg: "Article Id does not exist" });
-  
-  
-}
-async function selectAllArticles(query) {
+    const {rows} = await db.query(`SELECT articles.*,COUNT(comments.comment_id ) AS comment_count 
+    FROM articles 
+    JOIN comments
+    ON articles.article_id = comments.article_id
+    WHERE articles.article_id = $1
+    GROUP BY articles.article_id
+    `,[articleId])
+    
+    return rows.length > 0
+      ? rows[0]
+      : Promise.reject({ status: 404, msg: "Article Id does not exist" });
+    
+    
+  }
+  async selectAllArticles(query) {
     const currentQuery = Object.keys(query)[0]
     const validqueries = ['topic','sort_by','order','limit',undefined]
     if(validqueries.includes(currentQuery)){
@@ -103,15 +93,7 @@ async function selectAllArticles(query) {
 
 }
 
-    
-    
-    
-    
-
-
-
-
-async function selectCommentsByArticle(article_id,page) {
+async selectCommentsByArticle(article_id,page) {
   const validArticleIds = await db.query(`SELECT article_id From articles`)
   let queryString = `SELECT comments.comment_id,comments.votes,comments.created_at,comments.author,comments.body,comments.article_id 
   FROM articles
@@ -143,104 +125,79 @@ async function selectCommentsByArticle(article_id,page) {
   }
   return {comments:rows}
 }
-async function insertComment(commentinfo, articleId) {
+async insertComment(commentinfo, articleId) {
 
-    if (
-      (
-        await db.query("SELECT * FROM articles WHERE article_id = $1", [
-          articleId,
-        ])
-      ).rows.length === 0
-    ) {
-      return Promise.reject({ status: 404, msg: "Article not found" });
-    }
-    
-    if(!commentinfo.username || !commentinfo.body){
-      return Promise.reject({status: 400,msg: 'Bad Request'})
-    }
-    if(typeof commentinfo.username !== 'string'|| typeof commentinfo.body !== 'string'){
-      return Promise.reject({status :400,msg: 'Bad Request'})
-    }
-    if (
-      (
-        await db.query("SELECT username FROM users WHERE username = $1", [
-          commentinfo.username,
-        ])
-      ).rows.length === 0
-    ) {
-      return Promise.reject({
-        status: 404,
-        msg: "username doesnt exist create a profile first before commenting",
-      });
-    }
+  if (
+    (
+      await db.query("SELECT * FROM articles WHERE article_id = $1", [
+        articleId,
+      ])
+    ).rows.length === 0
+  ) {
+    return Promise.reject({ status: 404, msg: "Article not found" });
+  }
+  
+  if(!commentinfo.username || !commentinfo.body){
+    return Promise.reject({status: 400,msg: 'Bad Request'})
+  }
+  if(typeof commentinfo.username !== 'string'|| typeof commentinfo.body !== 'string'){
+    return Promise.reject({status :400,msg: 'Bad Request'})
+  }
+  if (
+    (
+      await db.query("SELECT username FROM users WHERE username = $1", [
+        commentinfo.username,
+      ])
+    ).rows.length === 0
+  ) {
+    return Promise.reject({
+      status: 404,
+      msg: "username doesnt exist create a profile first before commenting",
+    });
+  }
 
-    const { rows } = await db.query(
-      `INSERT INTO comments 
-    (author,body,article_id,votes)
-    VALUES
-    ($1,$2,$3,$4)
-    RETURNING *`,
-      [commentinfo.username, commentinfo.body, articleId, 0]
-    );
-    return rows[0];
+  const { rows } = await db.query(
+    `INSERT INTO comments 
+  (author,body,article_id,votes)
+  VALUES
+  ($1,$2,$3,$4)
+  RETURNING *`,
+    [commentinfo.username, commentinfo.body, articleId, 0]
+  );
+  return rows[0];
 
 }
-
-async function updateArticle(adjustVotes, article_id) {
+async updateArticle(adjustVotes, article_id) {
  
     
     
-    if ((await db.query("SELECT * FROM articles WHERE article_id = $1", [article_id,])).rows.length === 0) {
-      return Promise.reject({ status: 404, msg: "article doesnt exist" });
-    }
-    if(typeof adjustVotes!== 'number'){
-        return Promise.reject({status: 400, msg: "Bad Request incorrect format"})
-    }
-    let { rows } = await db.query(
-      "SELECT votes FROM articles WHERE article_id = $1",
-      [article_id]
-    );
-   const adjustedVotes = rows[0].votes+adjustVotes
-    if(adjustVotes  < 0){
-    return Promise.reject({status: 400, msg: "Bad Request votes cant go below zero"})
-    }
-    const output = await db.query(`UPDATE articles SET votes = $1 WHERE article_id = $2 RETURNING *`,[adjustedVotes,article_id])
-    
-    return output.rows[0];
+  if ((await db.query("SELECT * FROM articles WHERE article_id = $1", [article_id,])).rows.length === 0) {
+    return Promise.reject({ status: 404, msg: "article doesnt exist" });
+  }
+  if(typeof adjustVotes!== 'number'){
+      return Promise.reject({status: 400, msg: "Bad Request incorrect format"})
+  }
+  let { rows } = await db.query(
+    "SELECT votes FROM articles WHERE article_id = $1",
+    [article_id]
+  );
+ const adjustedVotes = rows[0].votes+adjustVotes
+  if(adjustVotes  < 0){
+  return Promise.reject({status: 400, msg: "Bad Request votes cant go below zero"})
+  }
+  const output = await db.query(`UPDATE articles SET votes = $1 WHERE article_id = $2 RETURNING *`,[adjustedVotes,article_id])
   
-}
-async function removeComment(commentId){
-
-
-    const {rows}= await db.query('DELETE FROM comments WHERE comment_id = $1 RETURNING *',[commentId])
-   return rows.length === 0 ?  Promise.reject({status:404, msg: 'Comment doesnt exist'}) : rows 
+  return output.rows[0];
 
 }
-async function selectUsers(){
-    
-    
-    const {rows} = await db.query('SELECT username,name, avatar_url FROM users')
-   
-    return rows
 
-}
-  
-async function selectUserByName(username){
+async removeArticle(articleId){
+  const {rows} = await db.query(`DELETE FROM articles where article_id = $1 RETURNING *`,[articleId])
+   return rows.length === 0 ?  Promise.reject({status:404, msg: 'Article doesnt exist'}) : rows 
+ }
 
-  const {rows}= await db.query('SELECT username, avatar_url, name FROM users WHERE username = $1',[username])
-  return rows.length === 0 ?  Promise.reject({status:404, msg: 'User doesnt exist'}) : rows[0]
-}
-async function updateCommentVotes(commentId,changeVotes){
-   
-  const{rows} = await db.query('UPDATE comments SET votes = votes + $1 WHERE comment_id = $2 RETURNING *',[changeVotes,commentId])
-  
-  return rows.length === 0 ?  Promise.reject({status:404, msg: 'Comment doesnt exist'}) : rows[0]
-  
- 
-}
-async function insertArticles(articleData){
+ async insertArticles(articleData){
   //have to check if topic is in topics database first
-  
   const topics = await db.query('SELECT slug FROM topics') 
   if(!topics.rows.some((topic)=> topic.slug === articleData.topic)){
     return Promise.reject({status:404, msg: 'topic not found in topics database make a post request to topics first'})
@@ -254,29 +211,65 @@ async function insertArticles(articleData){
   const {rows} = await db.query('INSERT INTO articles (title,topic,author,body,article_img_url) VALUES ($1,$2,$3,$4,$5) RETURNING *',[articleData.title,articleData.topic,articleData.author,articleData.body,articleData.article_img_url])
   return rows[0]
 }
-async function insertTopic(newTopic){
 
- const {rows} = await db.query(`INSERT INTO topics (slug,description) VALUES ($1,$2) RETURNING *`, [newTopic.slug,newTopic.description])
-  return rows[0]
 
 }
-async function removeArticle(articleId){
- const {rows} = await db.query(`DELETE FROM articles where article_id = $1 RETURNING *`,[articleId])
-  return rows.length === 0 ?  Promise.reject({status:404, msg: 'Article doesnt exist'}) : rows 
+
+class TopicsModel{
+  
+  async insertTopic(newTopic){
+
+    const {rows} = await db.query(`INSERT INTO topics (slug,description) VALUES ($1,$2) RETURNING *`, [newTopic.slug,newTopic.description])
+     return rows[0]
+   
+   }
+   async selectTopics() {
+    const { rows } = await db.query("SELECT * FROM topics ");
+  
+    return rows;
+  }
 }
+
+class CommentsModel{
+  async updateCommentVotes(commentId,changeVotes){
+   
+    const{rows} = await db.query('UPDATE comments SET votes = votes + $1 WHERE comment_id = $2 RETURNING *',[changeVotes,commentId])
+    
+    return rows.length === 0 ?  Promise.reject({status:404, msg: 'Comment doesnt exist'}) : rows[0]
+  }
+
+  async removeComment(commentId){
+
+
+    const {rows}= await db.query('DELETE FROM comments WHERE comment_id = $1 RETURNING *',[commentId])
+   return rows.length === 0 ?  Promise.reject({status:404, msg: 'Comment doesnt exist'}) : rows 
+
+}
+
+}
+
+class UsersModel {
+  async selectUsers(){
+    const {rows} = await db.query('SELECT username,name, avatar_url FROM users')
+    return rows
+
+}
+async selectUserByName(username){
+  const {rows}= await db.query('SELECT username, avatar_url, name FROM users WHERE username = $1',[username])
+  return rows.length === 0 ?  Promise.reject({status:404, msg: 'User doesnt exist'}) : rows[0]
+}
+}
+
+
+async function selectApi() {
+  const apidata = await fs.readFile(`${__dirname}/../endpoints.json`);
+  return JSON.parse(apidata);
+}
+
 module.exports = {
-  selectTopics,
   selectApi,
-  selectArticle,
-  selectAllArticles,
-  selectCommentsByArticle,
-  insertComment,
-  updateArticle,
-  removeComment,
-  selectUsers,
-  selectUserByName,
-  updateCommentVotes,
-  insertArticles,
-  insertTopic,
-  removeArticle
+  UsersModel,
+  CommentsModel,
+  TopicsModel,
+  ArticlesModel
 };
