@@ -1,7 +1,25 @@
 
+const { log } = require("console");
 const db = require("../db/connection");
 const fs = require("fs/promises");
 class ArticlesModel{
+  async pagination(limit,articleData,queryString,offset,toggle=1,topic = '',type = 'articles',comments = 0){
+    
+    if(limit !== undefined){
+      const total_count = articleData.rows.length
+      queryString += ` LIMIT $${toggle} OFFSET $${toggle+1}`
+      let articles = ''
+      toggle>1? articles = await db.query(queryString,[topic,limit,offset]):articles =await db.query(queryString,[limit,offset]) 
+      const userRequest = {}
+      userRequest[type]=articles.rows
+      userRequest.total_count = total_count
+     if(comments === 1){
+      return userRequest
+     }
+      return articles.rows.length > 0 ? userRequest: Promise.reject({ status: 404, msg: 'Query not found' });      
+    } 
+  }
+  
   async selectArticle(articleId) {
   
     const {rows} = await db.query(`SELECT articles.*,COUNT(comments.comment_id ) AS comment_count 
@@ -28,43 +46,21 @@ class ArticlesModel{
       LEFT JOIN comments ON articles.article_id = comments.article_id
   `
   const offset = (query.p * query.limit )-query.limit
-  const limit =  ` LIMIT $2 OFFSET $3`
- 
     switch(currentQuery){
       case 'topic':
-        
       queryString += `WHERE topic = $1 GROUP BY articles.article_id`
       let articles = await db.query(queryString, [query.topic]);
-      if(query.limit !== undefined){
-        const total_count = articles.rows.length
-        
-        queryString += limit
-        articles = await db.query(queryString, [query.topic,query.limit,offset]);
-        return articles.rows.length > 0 ? {articles: articles.rows,total_count} : Promise.reject({ status: 404, msg: 'Query not found' });
-      } 
-        return articles.rows.length > 0 ? {articles:articles.rows} : Promise.reject({ status: 404, msg: 'Query not found' });
+       return query.limit !== undefined ? this.pagination(query.limit,articles,queryString,offset,2,query.topic) : articles.rows.length > 0 ? {articles:articles.rows} : Promise.reject({ status: 404, msg: 'Query not found' });
       case 'sort_by':
         query.order === undefined ? query.order = 'desc': ''
         if(!['asc','desc'].includes(query.order)){return Promise.reject({status:400, msg : 'Bad Request'})}
         queryString += `GROUP BY articles.article_id ORDER BY ${query.sort_by !== '' ? query.sort_by : 'created_at'} ${query.order.toUpperCase()}`
         const articleData  = await db.query(queryString)
-        
-        if(query.limit !== undefined){
-          const total_count = articleData.rows.length
-          queryString += ` LIMIT $1 OFFSET $2`
-          let articles = await db.query(queryString,[query.limit,offset]);
-          return articles.rows.length > 0 ? {articles: articles.rows,total_count} : Promise.reject({ status: 404, msg: 'Query not found' });
-        } 
-        return {articles:articleData.rows}
+        return query.limit !== undefined ? this.pagination(query.limit,articleData,queryString,offset):{articles:articleData.rows}
       case 'limit':
         queryString += 'GROUP BY articles.article_id'
         const lengthcheck = await db.query(queryString)
-        
-        const total_count = lengthcheck.rows.length
-        queryString += ` LIMIT $1 OFFSET $2`
-        let article= await db.query(queryString,[query.limit,offset]);
-        return article.rows.length > 0 ? {articles: article.rows,total_count} : Promise.reject({ status: 404, msg: 'Query not found' });
-      
+        return this.pagination(query.limit,lengthcheck,queryString,offset)
       case undefined:
         queryString += `GROUP BY articles.article_id ORDER BY articles.created_at DESC`
         const { rows } = await db.query(queryString);
@@ -76,8 +72,6 @@ class ArticlesModel{
 
  
 }
-
-
 async selectCommentsByArticle(article_id,page) {
   const validArticleIds = await db.query(`SELECT article_id From articles`)
   let queryString = `SELECT comments.comment_id,comments.votes,comments.created_at,comments.author,comments.body,comments.article_id 
@@ -89,22 +83,11 @@ async selectCommentsByArticle(article_id,page) {
     queryString,
     [article_id]
   );
-  page.limit === ''?page.limit = 10: ''
-  if(page.limit !== undefined){
-    
-    page.p === page.p|| 1
-    const total_count = rows.length
-    const offset = (page.p * page.limit )-page.limit
-    queryString += ` LIMIT $2 OFFSET $3 `
-    let article= await db.query(queryString,[article_id,page.limit,offset]);
-    return  {comments: article.rows,total_count}
-    
-
-  }
-  return !validArticleIds.rows.some((article)=> {return article.article_id === Number(article_id)})? Promise.reject({status:404, msg: 'Article Id doesnt exist'}): {comments:rows}
+  page.limit === ''? page.limit = 10: ''
+  page.p = page.p|| 1
+  const offset = (page.p * page.limit )-page.limit
+  return page.limit !== undefined ? this.pagination(page.limit,{rows},queryString,offset,2,article_id,'comments',1): !validArticleIds.rows.some((article)=> {return article.article_id === Number(article_id)})? Promise.reject({status:404, msg: 'Article Id doesnt exist'}): {comments:rows}
 }
-
-
 async insertComment(commentinfo, articleId) {
 
   if ((await db.query("SELECT * FROM articles WHERE article_id = $1", [articleId,])).rows.length === 0) {
@@ -123,7 +106,6 @@ async insertComment(commentinfo, articleId) {
       msg: "username doesnt exist create a profile first before commenting",
     });
   }
-
   const { rows } = await db.query(
     `INSERT INTO comments 
   (author,body,article_id,votes)
@@ -133,8 +115,8 @@ async insertComment(commentinfo, articleId) {
     [commentinfo.username, commentinfo.body, articleId, 0]
   );
   return rows[0];
-
 }
+// make this simpler at some point copy the method used for the updatecommentvotes
 async updateArticle(adjustVotes, article_id) {
   
   if ((await db.query("SELECT * FROM articles WHERE article_id = $1", [article_id,])).rows.length === 0) {
