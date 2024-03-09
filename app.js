@@ -6,7 +6,7 @@ app.use("/api", apiRouter);
 app.use((req, res, next) => {
   res.setHeader(
     "Access-Control-Allow-Origin",
-    "https://your-frontend.com"
+    "http://localhost:5173"
   );
   res.setHeader(
     "Access-Control-Allow-Methods",
