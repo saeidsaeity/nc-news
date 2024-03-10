@@ -78,7 +78,7 @@ describe("tests for /api/articles/:article_id endpoint ", () => {
     test('Patch 200', async () => {
     const data = { inc_votes : 'dwwad'}
     const { body } = await request(app).patch('/api/articles/4').send(data).expect(400);
-    expect(body.msg).toBe('Bad Request incorrect format');
+    expect(body.msg).toBe('Bad Request');
     })
     test('Patch 200', async () => {
         const data = { inc_votes : 10 }

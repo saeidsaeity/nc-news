@@ -118,23 +118,8 @@ async insertComment(commentinfo, articleId) {
 }
 // make this simpler at some point copy the method used for the updatecommentvotes
 async updateArticle(adjustVotes, article_id) {
-  
-  if ((await db.query("SELECT * FROM articles WHERE article_id = $1", [article_id,])).rows.length === 0) {
-    return Promise.reject({ status: 404, msg: "article doesnt exist" });
-  }
-  if(typeof adjustVotes!== 'number'){
-      return Promise.reject({status: 400, msg: "Bad Request incorrect format"})
-  }
-  let { rows } = await db.query(
-    "SELECT votes FROM articles WHERE article_id = $1",
-    [article_id]
-  );
- const adjustedVotes = rows[0].votes+adjustVotes
- 
-  const output = await db.query(`UPDATE articles SET votes = $1 WHERE article_id = $2 RETURNING *`,[adjustedVotes,article_id])
-  
-  return output.rows[0];
-
+  const output = await db.query(`UPDATE articles SET votes = votes+ $1 WHERE article_id = $2 RETURNING *`,[adjustVotes,article_id])
+  return  output.rows.length === 0? Promise.reject({ status: 404, msg: "article doesnt exist" }):output.rows[0]
 }
 
 async removeArticle(articleId){
