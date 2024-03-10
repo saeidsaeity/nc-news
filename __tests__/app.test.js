@@ -4,8 +4,6 @@ const seed = require("../db/seeds/seed");
 const testData = require("../db/data/test-data/index");
 const db = require("../db/connection");
 const fs = require('fs/promises');
-const { constrainedMemory } = require("process");
-const { log } = require("console");
 
 beforeEach(() => seed(testData));
 afterAll(() => db.end());
@@ -71,11 +69,7 @@ describe("tests for /api/articles/:article_id endpoint ", () => {
             article_img_url: 'https://images.pexels.com/photos/158651/news-newsletter-newspaper-information-158651.jpeg?w=700&h=700'
           })
     })
-    test('Patch 200', async () => {
-        const data = { inc_votes : -10}
-        const { body } = await request(app).patch('/api/articles/4').send(data).expect(400);
-        expect(body.msg).toBe("Bad Request votes cant go below zero");
-    })
+   
     test('Patch 200', async () => {
     const data =  { inc_votes : 10}
     const { body } = await request(app).patch('/api/articles/100').send(data).expect(404);

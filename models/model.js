@@ -130,9 +130,7 @@ async updateArticle(adjustVotes, article_id) {
     [article_id]
   );
  const adjustedVotes = rows[0].votes+adjustVotes
-  if(adjustVotes  < 0){
-  return Promise.reject({status: 400, msg: "Bad Request votes cant go below zero"})
-  }
+ 
   const output = await db.query(`UPDATE articles SET votes = $1 WHERE article_id = $2 RETURNING *`,[adjustedVotes,article_id])
   
   return output.rows[0];
